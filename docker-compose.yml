@@ -16,3 +16,7 @@ services:
     ports:
       - 8081:80
     command:  -port 80 -backend-url http://backend:80
+  jaeger:
+    image: jaegertracing/all-in-one:1.16.0
+    ports:
+    - 16686:16686
