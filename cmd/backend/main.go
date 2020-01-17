@@ -4,49 +4,52 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/inovex/godays-demo/pkg"
+	"github.com/opentracing/opentracing-go"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/inovex/godays-demo/pkg"
 )
 
 var port int
+var serviceName string
 
 func init() {
 	flag.IntVar(&port, "port", 8080, "port to listen on")
+	flag.StringVar(&serviceName, "service-name", "backend", "Name of this service")
 }
 
 var toasts = []pkg.Toast{
 	{
-		Name: "Hawaii",
+		Name:    "Hawaii",
 		Weekday: time.Monday,
 	},
 	{
-		Name: "Peperoni",
+		Name:    "Peperoni",
 		Weekday: time.Tuesday,
 	},
 	{
-		Name: "Cheese",
+		Name:    "Cheese",
 		Weekday: time.Wednesday,
 	},
 	{
-		Name: "Ham",
+		Name:    "Ham",
 		Weekday: time.Thursday,
 	},
 	{
-		Name: "Caprese",
+		Name:    "Caprese",
 		Weekday: time.Friday,
 	},
 	{
-		Name: "Avocado",
+		Name:    "Avocado",
 		Weekday: time.Saturday,
 	},
 	{
-		Name: "Honey",
+		Name:    "Honey",
 		Weekday: time.Sunday,
 	},
 }
-
 
 func toastsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -56,5 +59,11 @@ func toastsHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	flag.Parse()
 	http.HandleFunc("/toasts/", toastsHandler)
+	closer, err := pkg.InitGlobalTracer(serviceName)
+	if err != nil {
+		log.Printf("Could not initialize jaeger tracer: %s", err.Error())
+		return
+	}
+	defer closer.Close()
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
