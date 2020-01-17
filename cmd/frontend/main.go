@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/inovex/godays-demo/pkg"
+	"github.com/opentracing/opentracing-go"
 	"log"
 	"net/http"
 	"time"
@@ -12,15 +13,15 @@ import (
 
 var port int
 var backendUrl string
-var serviceName string
 
 func init() {
 	flag.IntVar(&port, "port", 8080, "port to listen on")
-	flag.StringVar(&serviceName, "service-name", "frontend", "Name of this service")
 	flag.StringVar(&backendUrl, "backend-url", "http://backend:8080", "URL of the backend providing toasts")
 }
 
 func toastOfTheDayHandler(w http.ResponseWriter, r *http.Request) {
+	span := opentracing.GlobalTracer().StartSpan("/toastoftheday")
+	defer span.Finish()
 	resp, err := http.DefaultClient.Get(fmt.Sprintf("%s/toasts", backendUrl))
 	if err != nil {
 		_, _ = fmt.Fprintf(w, "Failed to call /toasts on backend service %s, err: %s", backendUrl, err)
@@ -53,7 +54,7 @@ func getToastOfTheDay(toasts []pkg.Toast) (pkg.Toast, error) {
 func main() {
 	flag.Parse()
 	http.HandleFunc("/toastoftheday", toastOfTheDayHandler)
-	closer, err := pkg.InitGlobalTracer(serviceName)
+	closer, err := pkg.InitGlobalTracer()
 	if err != nil {
 		log.Printf("Could not initialize jaeger tracer: %s", err.Error())
 		return
