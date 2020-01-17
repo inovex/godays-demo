@@ -12,9 +12,11 @@ import (
 
 var port int
 var backendUrl string
+var serviceName string
 
 func init() {
 	flag.IntVar(&port, "port", 8080, "port to listen on")
+	flag.StringVar(&serviceName, "service-name", "frontend", "Name of this service")
 	flag.StringVar(&backendUrl, "backend-url", "http://backend:8080", "URL of the backend providing toasts")
 }
 
@@ -51,5 +53,11 @@ func getToastOfTheDay(toasts []pkg.Toast) (pkg.Toast, error) {
 func main() {
 	flag.Parse()
 	http.HandleFunc("/toastoftheday", toastOfTheDayHandler)
+	closer, err := pkg.InitGlobalTracer(serviceName)
+	if err != nil {
+		log.Printf("Could not initialize jaeger tracer: %s", err.Error())
+		return
+	}
+	defer closer.Close()
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
