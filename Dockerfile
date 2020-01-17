@@ -1,9 +1,13 @@
 FROM golang as builder
-ARG binary
-WORKDIR /app
-COPY . .
 ENV GO111MODULE=on
-RUN CGO_ENABLED=0 GOOS=linux go build -o /main cmd/${binary}/main.go
+WORKDIR /app
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+COPY pkg/ pkg/
+ARG binary
+COPY cmd/${binary}/main.go main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /main main.go
 
 FROM gcr.io/distroless/static
 COPY --from=builder /main /main
