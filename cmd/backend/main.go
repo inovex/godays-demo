@@ -13,11 +13,9 @@ import (
 )
 
 var port int
-var serviceName string
 
 func init() {
 	flag.IntVar(&port, "port", 8080, "port to listen on")
-	flag.StringVar(&serviceName, "service-name", "backend", "Name of this service")
 }
 
 var toasts = []pkg.Toast{
@@ -52,6 +50,8 @@ var toasts = []pkg.Toast{
 }
 
 func toastsHandler(w http.ResponseWriter, r *http.Request) {
+	span := opentracing.GlobalTracer().StartSpan("/toasts")
+	defer span.Finish()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(toasts)
 }
@@ -59,7 +59,7 @@ func toastsHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	flag.Parse()
 	http.HandleFunc("/toasts/", toastsHandler)
-	closer, err := pkg.InitGlobalTracer(serviceName)
+	closer, err := pkg.InitGlobalTracer()
 	if err != nil {
 		log.Printf("Could not initialize jaeger tracer: %s", err.Error())
 		return
