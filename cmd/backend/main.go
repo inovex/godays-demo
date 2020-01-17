@@ -13,6 +13,7 @@ import (
 )
 
 var port int
+var propagator = pkg.InitHttpHeaderPropagator()
 
 func init() {
 	flag.IntVar(&port, "port", 8080, "port to listen on")
@@ -50,7 +51,11 @@ var toasts = []pkg.Toast{
 }
 
 func toastsHandler(w http.ResponseWriter, r *http.Request) {
-	span := opentracing.GlobalTracer().StartSpan("/toasts")
+	context, err := propagator.Extract(opentracing.HTTPHeadersCarrier(r.Header))
+	if err != nil {
+		log.Printf("Could not extract SpanContext from request %s", err)
+	}
+	span := opentracing.GlobalTracer().StartSpan("/toasts", opentracing.ChildOf(context))
 	defer span.Finish()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(toasts)
