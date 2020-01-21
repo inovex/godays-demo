@@ -26,7 +26,7 @@ func toastOfTheDayHandler(w http.ResponseWriter, r *http.Request) {
 	defer span.Finish()
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/toasts", backendUrl), nil)
 	if err != nil {
-		_, _ = fmt.Fprintf(w, "Failed to create httpRequest %s", err)
+		http.Error(w,  fmt.Sprintf("Failed to create httpRequest %s", err), 500)
 		return
 	}
 	err = propagator.Inject(span.Context().(jaeger.SpanContext), opentracing.HTTPHeadersCarrier(req.Header))
@@ -35,21 +35,21 @@ func toastOfTheDayHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		_, _ = fmt.Fprintf(w, "Failed to call /toasts on backend service %s, err: %s", backendUrl, err)
+		http.Error(w,  fmt.Sprintf("Failed to call /toasts on backend service %s, err: %s", backendUrl, err), 500)
 		return
 	}
 	var toasts []pkg.Toast
 	err = json.NewDecoder(resp.Body).Decode(&toasts)
 	if err != nil {
-		_, _ = fmt.Fprintf(w, "Failed to decode JSON, err: %s", err)
+		http.Error(w,  fmt.Sprintf("Failed to decode JSON, err: %s", err), 500)
 		return
 	}
 	toast, err := getToastOfTheDay(toasts)
 	if err != nil {
-		_, _ = fmt.Fprintf(w, "Failed to find Toast of the Day, err: %s", toasts, err)
+		http.Error(w,  fmt.Sprintf("Failed to find Toast of the Day, err: %s", err), 500)
 		return
 	}
-	fmt.Fprint(w, toast.Name)
+	_, _ = fmt.Fprint(w, toast.Name)
 }
 
 func getToastOfTheDay(toasts []pkg.Toast) (pkg.Toast, error) {
