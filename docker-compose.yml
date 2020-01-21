@@ -7,8 +7,8 @@ services:
         binary: backend
         step:
     ports:
-    - 8080:80
-    command: -port 80
+    - 8080:8080
+    command: -port 8080
     environment:
       - JAEGER_SERVICE_NAME=backend
       - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
@@ -22,8 +22,8 @@ services:
         binary: frontend
         step:
     ports:
-      - 8081:80
-    command:  -port 80 -backend-url http://backend:80
+      - 8081:8081
+    command:  -port 8081 -backend-url http://backend:8080
     environment:
       - JAEGER_SERVICE_NAME=frontend
       - JAEGER_ENDPOINT=http://jaeger:14268/api/traces

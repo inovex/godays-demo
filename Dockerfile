@@ -10,6 +10,6 @@ ARG step
 COPY step_${step}/${binary}/main.go main.go
 RUN CGO_ENABLED=0 GOOS=linux go build -o /main main.go
 
-FROM gcr.io/distroless/static
+FROM gcr.io/distroless/static:nonroot
 COPY --from=builder /main /main
 ENTRYPOINT ["/main"]
