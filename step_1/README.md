@@ -6,5 +6,5 @@ Neither the backend nor the frontend send any spans to jaeger. You can access th
 
 ```sh
 docker-compose build --build-arg step=1
-docker-compose up
+docker-compose up -d
 ```
