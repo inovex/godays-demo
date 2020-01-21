@@ -5,6 +5,7 @@ services:
       context: .
       args:
         binary: backend
+        step:
     ports:
     - 8080:80
     command: -port 80
@@ -19,6 +20,7 @@ services:
       context: .
       args:
         binary: frontend
+        step:
     ports:
       - 8081:80
     command:  -port 80 -backend-url http://backend:80
