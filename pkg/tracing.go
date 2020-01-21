@@ -10,25 +10,19 @@ import (
 	"log"
 )
 
-var headersConfig = (&jaeger.HeadersConfig{}).ApplyDefaults()
-
 func InitGlobalTracer() (io.Closer, error) {
 	log.Printf("Initializing global tracer")
-	jLogger := jaegerlog.StdLogger
-	jMetricsFactory := metrics.NullFactory
+
 	cfg, err := (&config.Configuration{}).FromEnv()
 	if err != nil {
 		return nil, err
 	}
-	cfg.Headers = headersConfig
+	cfg.Headers = (&jaeger.HeadersConfig{}).ApplyDefaults()
 	tracer, closer, err := cfg.NewTracer(
-		config.Logger(jLogger),
-		config.Metrics(jMetricsFactory),
+		config.Logger(jaegerlog.StdLogger),
+		config.Metrics(metrics.NullFactory),
 	)
 	opentracing.SetGlobalTracer(tracer)
-	return closer, err
-}
 
-func InitHttpHeaderPropagator() *jaeger.TextMapPropagator {
-	return jaeger.NewHTTPHeaderPropagator(headersConfig, jaeger.Metrics{})
+	return closer, err
 }

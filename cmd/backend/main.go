@@ -5,7 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/opentracing/opentracing-go"
+
+	"github.com/opentracing/opentracing-go/ext"
+	opentracingLog "github.com/opentracing/opentracing-go/log"
+
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -13,65 +18,54 @@ import (
 )
 
 var port int
-var propagator = pkg.InitHttpHeaderPropagator()
 
 func init() {
 	flag.IntVar(&port, "port", 8080, "port to listen on")
 }
-
-var toasts = []pkg.Toast{
-	{
-		Name:    "Hawaii",
-		Weekday: time.Monday,
-	},
-	{
-		Name:    "Peperoni",
-		Weekday: time.Tuesday,
-	},
-	{
-		Name:    "Cheese",
-		Weekday: time.Wednesday,
-	},
-	{
-		Name:    "Ham",
-		Weekday: time.Thursday,
-	},
-	{
-		Name:    "Caprese",
-		Weekday: time.Friday,
-	},
-	{
-		Name:    "Avocado",
-		Weekday: time.Saturday,
-	},
-	{
-		Name:    "Honey",
-		Weekday: time.Sunday,
-	},
+func printHeaders(h map[string][]string) {
+	for k, v := range h {
+		fmt.Printf("Header: %s, Value: %s\n", k, v)
+	}
 }
 
 func toastsHandler(w http.ResponseWriter, r *http.Request) {
 	var span opentracing.Span
-	context, err := propagator.Extract(opentracing.HTTPHeadersCarrier(r.Header))
+	printHeaders(r.Header)
+	spanCtx, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	if err != nil {
 		log.Printf("Could not extract SpanContext from request %s", err)
-		span = opentracing.GlobalTracer().StartSpan("/toasts")
-	} else {
-		span = opentracing.GlobalTracer().StartSpan("/toasts", opentracing.ChildOf(context))
 	}
+
+	span = opentracing.GlobalTracer().StartSpan("/toasts", opentracing.ChildOf(spanCtx))
+	ext.HTTPUrl.Set(span, r.URL.String())
+	ext.HTTPMethod.Set(span, r.Method)
+
 	defer span.Finish()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(toasts)
+
+	if rand.Int()%4 != 0 {
+		byteToasts, _ := json.Marshal(pkg.GetToasts())
+		_, _ = w.Write(byteToasts)
+	} else {
+		// Ups an error occurred
+		span.LogFields(
+			opentracingLog.String("error", "could not fetch toasts"),
+		)
+
+		byteToasts, _ := json.Marshal([]pkg.Toast{})
+		http.Error(w, string(byteToasts), http.StatusInternalServerError)
+	}
 }
 
 func main() {
 	flag.Parse()
-	http.HandleFunc("/toasts/", toastsHandler)
+	http.HandleFunc("/toasts", toastsHandler)
 	closer, err := pkg.InitGlobalTracer()
 	if err != nil {
 		log.Printf("Could not initialize jaeger tracer: %s", err.Error())
 		return
 	}
 	defer closer.Close()
+	rand.Seed(time.Now().Unix())
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
