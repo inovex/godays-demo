@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/inovex/godays-demo/pkg"
-	"github.com/opentracing/opentracing-go"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/inovex/godays-demo/pkg"
+	"github.com/opentracing/opentracing-go"
 )
 
 var port int

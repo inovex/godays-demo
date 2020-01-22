@@ -1,13 +1,14 @@
 package pkg
 
 import (
+	"io"
+	"log"
+
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/config"
 	jaegerlog "github.com/uber/jaeger-client-go/log"
 	"github.com/uber/jaeger-lib/metrics"
-	"io"
-	"log"
 )
 
 func InitGlobalTracer() (io.Closer, error) {
