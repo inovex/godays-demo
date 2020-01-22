@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/inovex/godays-demo/pkg"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/inovex/godays-demo/pkg"
 )
 
 var port int
